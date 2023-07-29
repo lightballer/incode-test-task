@@ -1,26 +1,20 @@
 import {
   Controller,
-  Post,
   Body,
+  Post,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { CreateAuthDto } from './dto/create-auth.dto';
+import { LoginDto } from './dto/login.dto';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
-
-  @Post('/signup')
-  signup(@Body() createAuthDto: CreateAuthDto) {
-    const { email, password } = createAuthDto;
-    console.log({ email, password });
-    return this.authService.create(createAuthDto);
-  }
+  constructor(private authService: AuthService) {}
 
   @Post('/login')
-  login(@Body() createAuthDto: CreateAuthDto) {
-    const { email, password } = createAuthDto;
-    console.log({ email, password });
-    return this.authService.create(createAuthDto);
+  async login(@Body() loginDto: LoginDto) {
+    const loginResult = await this.authService.login(loginDto);
+    if (loginResult) return { access_token: loginResult.access_token };
+    throw new UnauthorizedException();
   }
 }
