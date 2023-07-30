@@ -34,6 +34,7 @@ export class AuthService {
 
     if (user) {
       const payload = {
+        id: user.id,
         email: user.email,
         role: this.getRole(user),
         expirationDate: Math.floor(Date.now() / 1000) + 3600,

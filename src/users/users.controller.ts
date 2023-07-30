@@ -19,6 +19,7 @@ import { Role } from 'src/common/role';
 import { Request } from 'express';
 import jwtDecode from 'jwt-decode';
 import { JwtPayload } from 'jsonwebtoken';
+import { AuthGuard } from '@nestjs/passport';
 
 @Controller('users')
 export class UsersController {

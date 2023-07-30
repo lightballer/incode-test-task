@@ -3,18 +3,19 @@ import { AuthModule } from './auth/auth.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UsersModule } from './users/users.module';
 import { User } from './users/entities/user.entity';
+import { APP_FILTER } from '@nestjs/core';
 
 @Module({
   imports: [
     AuthModule,
     TypeOrmModule.forRoot({
       type: 'postgres',
-      host: 'localhost',
-      port: 5432,
-      username: 'incode-test-task-user',
-      password: 'incode-test-task-password',
-      database: 'incode-test-task-db',
-      synchronize: true,
+      host: process.env.DB_HOST,
+      port: +process.env.DB_PORT,
+      username: process.env.DB_USERNAME,
+      password: process.env.DB_PASSWORD,
+      database: process.env.DB_NAME,
+      synchronize: true, // don't forget to set to false for prod
       entities: [User],
     }),
     UsersModule,
