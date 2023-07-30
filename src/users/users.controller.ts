@@ -16,25 +16,27 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { Roles } from 'src/common/roles.decorator';
 import { CustomAuthGuard } from 'src/auth/auth.guard';
 import { Role } from 'src/common/role';
-import { Request } from 'express';
 import jwtDecode from 'jwt-decode';
 import { JwtPayload } from 'jsonwebtoken';
-import { AuthGuard } from '@nestjs/passport';
+import { JwtToken } from 'src/common/jwt-token.decorator';
 
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Post()
-  create(@Body() createUserDto: CreateUserDto) {
-    return this.usersService.create(createUserDto);
+  async create(@Body() createUserDto: CreateUserDto) {
+    const existingUser = await this.usersService.findOne(createUserDto.email);
+    if (existingUser)
+      throw new BadRequestException('User with such email already exists');
+    const createdUser = await this.usersService.create(createUserDto);
+    return { ...createdUser, password: undefined };
   }
 
   @Get()
   @UseGuards(CustomAuthGuard)
   @Roles(Role.Admin, Role.Boss, Role.Regular)
-  findAll(@Req() req: Request) {
-    const token = req.headers['authorization'].split('Bearer ')[1];
+  findAll(@JwtToken() token: string) {
     const { email, role } = jwtDecode<JwtPayload>(token);
     const handler = this.getUsersHandlers({ email })[role];
     if (handler) return handler();
@@ -47,15 +49,10 @@ export class UsersController {
   async update(
     @Param('id') id: string,
     @Body() updateUserDto: UpdateUserDto,
-    @Req() req: Request,
+    @JwtToken() token: string,
   ) {
-    const token = req.headers['authorization'].split('Bearer ')[1];
     const payload = jwtDecode<JwtPayload>(token);
-    return this.usersService.update(
-      +id,
-      +payload.id,
-      updateUserDto,
-    );
+    return this.usersService.update(+id, +payload.id, updateUserDto);
   }
 
   private getUsersHandlers(options) {

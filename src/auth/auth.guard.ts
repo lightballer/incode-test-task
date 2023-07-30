@@ -1,9 +1,13 @@
-import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
+import {
+  ExecutionContext,
+  Injectable,
+} from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { AuthGuard } from '@nestjs/passport';
 import { Role } from 'src/common/role';
 import jwtDecode from 'jwt-decode';
 import { JwtPayload } from 'jsonwebtoken';
+import { extractTokenFromRequest } from 'src/common/jwt-token.decorator';
 
 @Injectable()
 export class CustomAuthGuard extends AuthGuard('jwt') {
@@ -22,7 +26,7 @@ export class CustomAuthGuard extends AuthGuard('jwt') {
 
     const req = context.switchToHttp().getRequest();
 
-    const token = req.headers['authorization'].split('Bearer ')[1];
+    const token = extractTokenFromRequest(req);
 
     const { role } = jwtDecode<JwtPayload>(token);
 
