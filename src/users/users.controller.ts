@@ -35,16 +35,7 @@ export class UsersController {
   findAll(@Req() req: Request) {
     const token = req.headers['authorization'].split('Bearer ')[1];
     const { email, role } = jwtDecode<JwtPayload>(token);
-    const getUsersHandlers = (options) => ({
-      [Role.Admin]: () => this.usersService.findAll(),
-      [Role.Boss]: async () => {
-        const boss = await this.usersService.findOne(email);
-        const subordinates = await this.usersService.getSubordinates(boss.id);
-        return [boss, ...subordinates];
-      },
-      [Role.Regular]: () => this.usersService.findOne(options.email),
-    });
-    const handler = getUsersHandlers({ email })[role];
+    const handler = this.getUsersHandlers({ email })[role];
     if (handler) return handler();
     throw new BadRequestException();
   }
@@ -52,7 +43,31 @@ export class UsersController {
   @Patch(':id')
   @UseGuards(CustomAuthGuard)
   @Roles(Role.Admin, Role.Boss)
-  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    return this.usersService.update(+id, updateUserDto);
+  async update(
+    @Param('id') id: string,
+    @Body() updateUserDto: UpdateUserDto,
+    @Req() req: Request,
+  ) {
+    const token = req.headers['authorization'].split('Bearer ')[1];
+    const payload = jwtDecode<JwtPayload>(token);
+    const updatedUser = await this.usersService.update(
+      +id,
+      +payload.id,
+      updateUserDto,
+    );
+    if (!updatedUser) throw new BadRequestException('Incorrect input');
+    return updatedUser;
+  }
+
+  private getUsersHandlers(options) {
+    return {
+      [Role.Admin]: () => this.usersService.findAll(),
+      [Role.Boss]: async () => {
+        const boss = await this.usersService.findOne(options.email);
+        const subordinates = await this.usersService.getSubordinates(boss.id);
+        return [{ ...boss, password: undefined }, ...subordinates];
+      },
+      [Role.Regular]: () => this.usersService.findOne(options.email),
+    };
   }
 }

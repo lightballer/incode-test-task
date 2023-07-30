@@ -34,8 +34,18 @@ export class UsersService {
     return this.userRepository.findOneBy({ email });
   }
 
-  update(id: number, updateUserDto: UpdateUserDto) {
-    return `This action updates a #${id} user`;
+  async update(id: number, bossId: number, updateUserDto: UpdateUserDto) {
+    const existingUser = await this.userRepository.findOne({
+      where: { id },
+    });
+    if (existingUser.bossId !== bossId) return null;
+
+    const updatedUser = await this.userRepository.preload({
+      id,
+      ...updateUserDto,
+    });
+    const updateResult = await this.userRepository.save(updatedUser);
+    return { ...updateResult, password: undefined };
   }
 
   async getSubordinates(userId: number): Promise<User[]> {
@@ -64,6 +74,6 @@ export class UsersService {
       }
     }
 
-    return allSubordinates;
+    return allSubordinates.map((sub) => ({ ...sub, password: undefined }));
   }
 }
