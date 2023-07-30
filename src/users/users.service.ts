@@ -5,9 +5,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
 import { Repository } from 'typeorm';
 import { HashService } from 'src/hash/hash.service';
-import { CustomAuthGuard } from 'src/auth/auth.guard';
-import { Roles } from 'src/common/roles.decorator';
-import { Role } from 'src/common/role';
 
 @Injectable()
 export class UsersService {
@@ -37,7 +34,36 @@ export class UsersService {
     return this.userRepository.findOneBy({ email });
   }
 
-  // update(id: number, updateUserDto: UpdateUserDto) {
-  //   return `This action updates a #${id} user`;
-  // }
+  update(id: number, updateUserDto: UpdateUserDto) {
+    return `This action updates a #${id} user`;
+  }
+
+  async getSubordinates(userId: number): Promise<User[]> {
+    const boss = await this.userRepository.findOne({
+      where: { id: userId },
+      relations: ['subordinates'],
+    });
+
+    if (!boss) {
+      return [];
+    }
+
+    const stack = [...boss.subordinates];
+
+    const allSubordinates = [...boss.subordinates];
+
+    while (stack.length > 0) {
+      const _subordinate = stack.pop();
+      const { subordinates } = await this.userRepository.findOne({
+        where: { id: _subordinate.id },
+        relations: ['subordinates'],
+      });
+      if (subordinates.length) {
+        stack.push(...subordinates);
+        allSubordinates.push(...subordinates);
+      }
+    }
+
+    return allSubordinates;
+  }
 }
