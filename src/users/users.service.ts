@@ -1,4 +1,4 @@
-import { Injectable, UseGuards } from '@nestjs/common';
+import { BadRequestException, Injectable, UseGuards } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -18,6 +18,25 @@ export class UsersService {
     const { hashedPassword, salt } = await this.hashService.hashPassword(
       password,
     );
+
+    const bossId = createUserDto.bossId;
+
+    if (bossId && createUserDto.isAdmin) {
+      throw new BadRequestException('Admin cannot have a boss');
+    }
+
+    if (bossId) {
+      const boss = await this.userRepository.findOne({
+        where: { id: bossId },
+      });
+      if (!boss.isBoss && !boss.isAdmin) {
+        console.log({ boss });
+        throw new BadRequestException(
+          'User with specified id cannot be a boss',
+        );
+      }
+    }
+
     const user = this.userRepository.create({
       ...createUserDto,
       password: `${hashedPassword}|${salt}`,
@@ -38,7 +57,18 @@ export class UsersService {
     const existingUser = await this.userRepository.findOne({
       where: { id },
     });
-    if (existingUser.bossId !== bossId) return null;
+    if (existingUser.bossId !== bossId) throw new BadRequestException('You are not the boss of specified user');;
+
+    if (existingUser.isAdmin) {
+      throw new BadRequestException('Admin cannot have a boss');
+    }
+
+    const boss = await this.userRepository.findOne({
+      where: { id: updateUserDto.bossId },
+    });
+    if (!boss.isBoss && !boss.isAdmin) {
+      throw new BadRequestException('User with specified id cannot be a boss');
+    }
 
     const updatedUser = await this.userRepository.preload({
       id,

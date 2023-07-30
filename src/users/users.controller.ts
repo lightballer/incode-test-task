@@ -51,13 +51,11 @@ export class UsersController {
   ) {
     const token = req.headers['authorization'].split('Bearer ')[1];
     const payload = jwtDecode<JwtPayload>(token);
-    const updatedUser = await this.usersService.update(
+    return this.usersService.update(
       +id,
       +payload.id,
       updateUserDto,
     );
-    if (!updatedUser) throw new BadRequestException('Incorrect input');
-    return updatedUser;
   }
 
   private getUsersHandlers(options) {
