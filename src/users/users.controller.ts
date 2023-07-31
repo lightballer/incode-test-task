@@ -5,9 +5,7 @@ import {
   Body,
   Patch,
   Param,
-  Delete,
   UseGuards,
-  Req,
   BadRequestException,
 } from '@nestjs/common';
 import { UsersService } from './users.service';

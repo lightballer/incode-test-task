@@ -30,7 +30,6 @@ export class UsersService {
         where: { id: bossId },
       });
       if (!boss.isBoss && !boss.isAdmin) {
-        console.log({ boss });
         throw new BadRequestException(
           'User with specified id cannot be a boss',
         );
